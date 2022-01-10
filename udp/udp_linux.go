@@ -6,7 +6,6 @@ package udp
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/go-kit/kit/metrics"
 	"net"
 	"syscall"
 	"unsafe"
@@ -160,7 +159,12 @@ func (u *Conn) ListenOut(r EncReader, lhf LightHouseHandlerFunc, cache *firewall
 
 		//metric.Update(int64(n))
 		for i := 0; i < n; i++ {
-			udpAddr.IP = names[i][8:24]
+			if cidr.IsZeros(names[i][8:24]) {
+				udpAddr.IP = names[i][4:8]
+			} else {
+				udpAddr.IP = names[i][8:24]
+			}
+
 			udpAddr.Port = binary.BigEndian.Uint16(names[i][2:4])
 			r(udpAddr, plaintext[:0], buffers[i][:msgs[i].Len], h, fwPacket, lhf, nb, q, cache.Get(u.l))
 		}
